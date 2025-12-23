@@ -30,6 +30,10 @@ export const Route = createRootRouteWithContext<{
         rel: 'stylesheet',
         href: appCss,
       },
+      {
+        rel: 'icon',
+        href: '/favicon.svg',
+      },
     ],
   }),
   notFoundComponent: () => <div>404: Page Not Found</div>,
