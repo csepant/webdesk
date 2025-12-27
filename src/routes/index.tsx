@@ -18,7 +18,8 @@ import { Widget } from '@/components/Widget'
 import File from '@/components/File'
 import Window from '@/components/Window'
 import Button from '@/components/Button'
-import { useMutation } from "convex/react";
+import { RightClickMenu } from '@/components/RightClickMenu'
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 
 
@@ -39,6 +40,12 @@ function App() {
   const [contactFormLoading, setContactFormLoading] = useState(false);
   const [contactFormError, setContactFormError] = useState<string | null>(null);
 
+  // create file
+  const [createFileWindowOpen, setCreateFileWindowOpen] = useState(false);
+
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
+
   // contact form
   const [contactFormData, setContactFormData] = useState({
     name: '',
@@ -46,7 +53,9 @@ function App() {
     message: ''
   });
   const submitContactForm = useMutation(api.contact.submitContactForm);
-
+  const createFile = useMutation(api.files.createFile);
+  const files = useQuery(api.files.getFiles);
+  const [fileOpen, setFileOpen] = useState<{ name: string; content: string } | null>(null);
 
   const handleContactFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,15 +68,45 @@ function App() {
     setContactFormData({ name: '', email: '', message: '' });
   }
 
+  const rightClickMenu = (e: MouseEvent) => {
+    e.preventDefault();
+    // implement custom context menu if desired
+
+
+  }
+
+  useEffect(() => {
+    const desktop = desktopRef.current;
+    if (desktop) {
+      desktop.addEventListener('contextmenu', rightClickMenu);
+    }
+    return () => {
+      if (desktop) {
+        desktop.removeEventListener('contextmenu', rightClickMenu);
+      }
+    }
+  }, []);
+
 
   return (
-    <div className="w-full h-full relative overflow-hidden">
+    <div className="w-full h-full relative overflow-hidden" onContextMenu={(e) => {
+      e.preventDefault();
+      setContextMenuOpen(true);
+      setContextMenuPosition({ x: e.pageX, y: e.pageY });
+    }}>
+      {contextMenuOpen && (
+        <RightClickMenu
+          position={contextMenuPosition}
+          onClose={() => setContextMenuOpen(false)}
+          onCreateFile={() => { setCreateFileWindowOpen(true); }}
+        />
+      )}
       <div className="w-full h-full inset-0 bg-black z-[-1] overflow-hidden" >
         <video
           autoPlay
           loop
           muted
-          className="fixed top-0 left-0 w-full h-full object-cover z-0 opacity-80"
+          className="hidden md:block fixed top-0 left-0 w-full h-full object-cover z-0 opacity-80"
         >
 
           <source src="/background.mp4" type="video/mp4" />
@@ -89,6 +128,31 @@ function App() {
 
       <section ref={desktopRef} className="grid grid-cols-4 place-items-center min-h-screen bg-gradient-to-br from-slate-700 via-stone-950 to-cyan-900 text-white overflow-hidden">
         {/* background video */}
+        {files && files.map((file) => (
+          <div key={file._id.toString()}>
+            <File
+              key={file._id.toString()}
+              name={file.name}
+              onClick={() => { setFileOpen({ name: file.name, content: file.content }); }}
+              icon={
+                <BookText size={36} />
+
+              }
+              position={file.position}
+            />
+            <Window open={fileOpen?.name === file.name} title={file.name} subtitle="" content={
+              <div>
+                <pre className="whitespace-pre-wrap">{file.content}</pre>
+              </div>
+            }
+              handler={() => setFileOpen(null)}
+              parentRef={desktopRef}
+              createdAt={file._creationTime}
+              updatedAt={file.updatedAt}
+            />
+
+          </div>
+        ))}
         <File
           name="ABOUT_ME.txt"
           onClick={() => setIsOpen(!isOpen)}
@@ -250,6 +314,38 @@ function App() {
           handler={() => setContactOpen(!contactOpen)}
           parentRef={desktopRef}
         />
+        <Window open={createFileWindowOpen} title="Create New File" subtitle="Add a new file to the desktop" content={
+          <div>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const form = e.target as HTMLFormElement;
+              const formData = new FormData(form);
+              const fileName = formData.get('fileName') as string;
+              const content = formData.get('content') as string;
+              const position = { x: contextMenuPosition.x, y: contextMenuPosition.y };
+
+              await createFile({ name: fileName, content, position });
+              setCreateFileWindowOpen(false);
+              setContextMenuOpen(false);
+            }}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1" htmlFor="fileName">File Name:</label>
+                <input type="text" id="fileName" name="fileName" className="w-full p-2 border border-sky-600 rounded bg-slate-800 text-white" required />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1" htmlFor="content">Content:</label>
+                <textarea id="content" name="content" rows={4} className="w-full p-2 border border-sky-600 rounded bg-slate-800 text-white" required></textarea>
+              </div>
+              <Button type="submit" className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded">
+                Create File
+              </Button>
+            </form>
+          </div>
+        }
+          handler={() => setCreateFileWindowOpen(false)}
+          parentRef={desktopRef}
+        />
+
 
         <section data-testid="widget-bar" className="hidden md:grid md:col-start-4 w-full h-full grid-rows-4 bg-slate-900/20 shadow-lg  backdrop-blur-sm gap-4 p-4 place-items-start self-start row-start-1">
 
