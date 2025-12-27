@@ -117,7 +117,7 @@ export default function WindowComponent({ title, subtitle, content, open, handle
             </div>
 
           </div>
-          <div className="px-8">
+          <div className="px-8 overflow-y-autow h-[calc(100%-72px)] flex flex-col">
 
             <div className=" text-sky-500 py-2 font-semibold">
               {subtitle}
