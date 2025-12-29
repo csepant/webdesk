@@ -55,7 +55,12 @@ function App() {
   const submitContactForm = useMutation(api.contact.submitContactForm);
   const createFile = useMutation(api.files.createFile);
   const files = useQuery(api.files.getFiles);
-  const [fileOpen, setFileOpen] = useState<{ name: string; content: string } | null>(null);
+  const [fileOpen, setFileOpen] = useState<{
+    name: string;
+    content: string
+    createdAt?: number;
+    updatedAt?: string;
+  } | null>(null);
 
   const handleContactFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,8 +76,6 @@ function App() {
   const rightClickMenu = (e: MouseEvent) => {
     e.preventDefault();
     // implement custom context menu if desired
-
-
   }
 
   useEffect(() => {
@@ -129,29 +132,24 @@ function App() {
       <section ref={desktopRef} className="grid grid-cols-4 place-items-center min-h-screen bg-gradient-to-br from-slate-700 via-stone-950 to-cyan-900 text-white overflow-hidden">
         {/* background video */}
         {files && files.map((file) => (
-          <div key={file._id.toString()}>
-            <File
-              key={file._id.toString()}
-              name={file.name}
-              onClick={() => { setFileOpen({ name: file.name, content: file.content }); }}
-              icon={
-                <BookText size={36} />
+          <File
+            key={file._id.toString()}
+            name={file.name}
+            onClick={() => {
+              setFileOpen({
+                name: file.name,
+                content: file.content,
+                createdAt: file._creationTime,
+                updatedAt: file.updatedAt
+              });
+            }}
+            icon={
+              <BookText size={36} />
 
-              }
-              position={file.position}
-            />
-            <Window open={fileOpen?.name === file.name} title={file.name} subtitle="" content={
-              <div>
-                <pre className="whitespace-pre-wrap">{file.content}</pre>
-              </div>
             }
-              handler={() => setFileOpen(null)}
-              parentRef={desktopRef}
-              createdAt={file._creationTime}
-              updatedAt={file.updatedAt}
-            />
+            position={file.position}
+          />
 
-          </div>
         ))}
         <File
           name="ABOUT_ME.txt"
@@ -198,6 +196,20 @@ function App() {
           }
           position={{ x: 20, y: 420 }}
         />
+
+        {fileOpen && (
+          <Window open={true} title="File Viewer" subtitle={fileOpen.name} content={
+            <div>
+              <pre className="whitespace-pre-wrap break-words">{fileOpen.content}</pre>
+            </div>
+          }
+            handler={() => setFileOpen(null)}
+            parentRef={desktopRef}
+            createdAt={fileOpen.createdAt}
+            updatedAt={fileOpen.updatedAt}
+          />
+        )}
+
         <Window open={isOpen} title="ABOUT_ME.txt" subtitle="Developer | Cloud Engineer | Tinkerer" content={
           <div className=" h-full">
             <div className="grid grid-cols-2" >

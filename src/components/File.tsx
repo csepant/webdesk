@@ -5,7 +5,9 @@ export default function FileComponent({ name, onClick, icon, position }: {
   name: string; onClick: () => void, icon: React.ReactNode,
   position?: { x: number; y: number }
 }) {
+
   const [onFocus, setOnFocus] = useState(false);
+  const [positionState, setPositionState] = useState(position);
 
 
   useEffect(() => {
@@ -22,12 +24,16 @@ export default function FileComponent({ name, onClick, icon, position }: {
 
   return (
     <Rnd
-      default={{ x: position?.x ? position.x : 20, y: position?.y ? position.y : 20, width: 100, height: 100 }}
+      default={{ x: 20, y: 20, width: 100, height: 100 }}
       minWidth={80}
       minHeight={80}
       bounds="parent"
       dragGrid={[20, 20]}
       enableResizing={false}
+      onDrag={(e, d) => {
+        setPositionState({ x: d.x, y: d.y });
+      }}
+      position={positionState}
     >
       <div className={`w-full h-full flex flex-col items-center justify-center cursor-pointer ${onFocus ? 'bg-sky-600/30' : 'bg-transparent'} rounded-lg p-2 hover:bg-sky-600/20`}
         onBlur={() => setOnFocus(false)}
