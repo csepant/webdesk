@@ -9,6 +9,8 @@
  */
 
 import type * as contact from "../contact.js";
+import type * as files from "../files.js";
+import type * as widgets from "../widgets.js";
 
 import type {
   ApiFromModules,
@@ -18,6 +20,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   contact: typeof contact;
+  files: typeof files;
+  widgets: typeof widgets;
 }>;
 
 /**

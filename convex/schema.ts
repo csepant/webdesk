@@ -22,9 +22,10 @@ export default defineSchema({
     content: v.string(),
     updatedAt: v.string(),
     position: v.optional(v.object({
-      x: v.number(),
-      y: v.number(),
+      x: v.float64(),
+      y: v.float64(),
     })),
+    deleted: v.optional(v.boolean()),
   }).index("by_name", ["name"]),
 
 });

@@ -4,7 +4,7 @@ import { v } from "convex/values";
 
 export const getFiles = query({
   handler: async (ctx) => {
-    return await ctx.db.query("files").collect();
+    return await ctx.db.query("files").filter((q) => q.neq(q.field("deleted"), true)).collect();
   },
 });
 
@@ -54,3 +54,45 @@ export const updateFileContent = mutation({
     });
   },
 });
+
+export const renameFile = mutation({
+  args: {
+    fileId: v.id("files"),
+    newName: v.string(),
+  },
+  handler: async (ctx, { fileId, newName }) => {
+    await ctx.db.patch(fileId, {
+      name: newName,
+      updatedAt: new Date().toISOString(),
+    });
+  },
+});
+
+export const deleteFile = mutation({
+  args: {
+    fileId: v.id("files"),
+  },
+  handler: async (ctx, { fileId }) => {
+    await ctx.db.patch(fileId, {
+      deleted: true,
+      updatedAt: new Date().toISOString(),
+    });
+  },
+});
+
+export const updateFilePosition = mutation({
+  args: {
+    fileId: v.id("files"),
+    position: v.object({
+      x: v.number(),
+      y: v.number(),
+    }),
+  },
+  handler: async (ctx, { fileId, position }) => {
+    await ctx.db.patch(fileId, {
+      position: position,
+      updatedAt: new Date().toISOString(),
+    });
+  },
+});
+
