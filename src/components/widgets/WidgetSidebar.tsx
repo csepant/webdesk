@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
+import type { RefObject } from "react";
 import { useEffect, useRef } from "react";
 import { StressLevelWidget } from "./StressLevelWidget";
 import { TemperatureWidget } from "./TemperatureWidget";
@@ -6,21 +7,23 @@ import { TemperatureWidget } from "./TemperatureWidget";
 export function WidgetSidebar({
 	open,
 	onClose,
-}: { open: boolean; onClose: () => void }) {
+	toggleRef,
+}: { open: boolean; onClose: () => void; toggleRef: RefObject<HTMLDivElement | null> }) {
 	const ref = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		if (!open) return;
 
 		function handleClick(e: MouseEvent) {
-			if (ref.current && !ref.current.contains(e.target as Node)) {
-				onClose();
-			}
+			const target = e.target as Node;
+			if (ref.current?.contains(target)) return;
+			if (toggleRef.current?.contains(target)) return;
+			onClose();
 		}
 
 		document.addEventListener("mousedown", handleClick);
 		return () => document.removeEventListener("mousedown", handleClick);
-	}, [open, onClose]);
+	}, [open, onClose, toggleRef]);
 
 	return (
 		<AnimatePresence>

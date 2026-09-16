@@ -1,234 +1,188 @@
+import type { UseNavigateResult } from "@tanstack/react-router";
 import {
 	createContext,
 	type ReactNode,
 	useCallback,
 	useContext,
-	useMemo,
-	useReducer,
 	useRef,
+	useState,
 } from "react";
-import type { UseNavigateResult } from "@tanstack/react-router";
+import type { WindowFrame } from "@/lib/windowGeometry";
 
-const WINDOW_IDS = [
-	"about",
-	"projects",
-	"blog",
-	"readme",
-	"contact",
-	"createFile",
-	"fileViewer",
-] as const;
+export const WINDOW_IDS = ["contact", "fileViewer", "finder"] as const;
 export type WindowId = (typeof WINDOW_IDS)[number];
-
-interface ZOrderState {
-	zOrder: string[]; // stack order, last = top
+interface SearchState {
+	open: string[];
+	maximized: string[];
+	file?: string;
+	folder?: string;
 }
-
-type ZOrderAction =
-	| { type: "BRING_TO_FRONT"; id: string }
-	| { type: "REMOVE"; id: string };
-
-const MAX_Z = 50;
-
-function zOrderReducer(state: ZOrderState, action: ZOrderAction): ZOrderState {
-	switch (action.type) {
-		case "BRING_TO_FRONT": {
-			const zOrder = [
-				...state.zOrder.filter((id) => id !== action.id),
-				action.id,
-			];
-			return { zOrder };
-		}
-		case "REMOVE": {
-			return { zOrder: state.zOrder.filter((id) => id !== action.id) };
-		}
-		default:
-			return state;
-	}
-}
-
 interface WindowManagerContextValue {
 	isOpen: (id: string) => boolean;
 	open: (id: string) => void;
 	close: (id: string) => void;
-	toggle: (id: string) => void;
 	bringToFront: (id: string) => void;
 	getZIndex: (id: string) => number;
+	activeWindow: string | undefined;
 	isMaximized: (id: string) => boolean;
 	toggleMaximized: (id: string) => void;
+	isMinimized: (id: string) => boolean;
+	minimize: (id: string) => void;
 	openFile: string | undefined;
-	setOpenFile: (fileName: string | undefined) => void;
+	setOpenFile: (id: string | undefined) => void;
+	openFolder: string;
+	setOpenFolder: (id: string) => void;
+	frames: Record<string, WindowFrame>;
+	setFrame: (id: string, frame: WindowFrame) => void;
 }
-
-const WindowManagerContext = createContext<WindowManagerContextValue | null>(
-	null,
-);
-
-interface WindowManagerProviderProps {
-	children: ReactNode;
-	openWindows: string[];
-	maximizedWindows: string[];
-	openFile: string | undefined;
-	navigate: UseNavigateResult<string>;
-}
+const Context = createContext<WindowManagerContextValue | null>(null);
 
 export function WindowManagerProvider({
 	children,
 	openWindows,
 	maximizedWindows,
 	openFile,
+	openFolder,
 	navigate,
-}: WindowManagerProviderProps) {
-	const [state, dispatch] = useReducer(zOrderReducer, { zOrder: [] });
-
-	const openSet = useMemo(() => new Set(openWindows), [openWindows]);
-	const maximizedSet = useMemo(
-		() => new Set(maximizedWindows),
-		[maximizedWindows],
-	);
-
-	// Use refs to avoid stale closures in callbacks
-	const openWindowsRef = useRef(openWindows);
-	openWindowsRef.current = openWindows;
-	const maximizedWindowsRef = useRef(maximizedWindows);
-	maximizedWindowsRef.current = maximizedWindows;
-	const openFileRef = useRef(openFile);
-	openFileRef.current = openFile;
-
-	const updateSearch = useCallback(
-		(updates: {
-			open?: string[];
-			maximized?: string[];
-			file?: string | undefined;
-		}) => {
-			navigate({
-				search: (prev: Record<string, unknown>) => ({
-					...prev,
-					...updates,
+}: {
+	children: ReactNode;
+	openWindows: string[];
+	maximizedWindows: string[];
+	openFile?: string;
+	openFolder?: string;
+	navigate: UseNavigateResult<"/">;
+}) {
+	const [zOrder, setZOrder] = useState(openWindows);
+	const [minimized, setMinimized] = useState<string[]>([]);
+	const [frames, setFrames] = useState<Record<string, WindowFrame>>({});
+	const search = useRef<SearchState>({
+		open: openWindows,
+		maximized: maximizedWindows,
+		file: openFile,
+		folder: openFolder,
+	});
+	search.current = {
+		open: openWindows,
+		maximized: maximizedWindows,
+		file: openFile,
+		folder: openFolder,
+	};
+	const update = useCallback(
+		(changes: Partial<SearchState>) => {
+			search.current = { ...search.current, ...changes };
+			void navigate({
+				to: "/",
+				search: (previous) => ({
+					...previous,
+					...changes,
 				}),
+				replace: true,
 			});
 		},
 		[navigate],
 	);
-
-	const isOpen = useCallback((id: string) => openSet.has(id), [openSet]);
-
+	const bringToFront = useCallback((id: string) => {
+		setZOrder((previous) =>
+			previous.at(-1) === id
+				? previous
+				: [...previous.filter((item) => item !== id), id],
+		);
+	}, []);
 	const open = useCallback(
 		(id: string) => {
-			const current = openWindowsRef.current;
-			if (!current.includes(id)) {
-				updateSearch({ open: [...current, id] });
-			}
-			dispatch({ type: "BRING_TO_FRONT", id });
+			if (!WINDOW_IDS.includes(id as WindowId)) return;
+			if (!search.current.open.includes(id))
+				update({ open: [...search.current.open, id] });
+			setMinimized((previous) => previous.filter((item) => item !== id));
+			bringToFront(id);
 		},
-		[updateSearch],
+		[update, bringToFront],
 	);
-
 	const close = useCallback(
 		(id: string) => {
-			const current = openWindowsRef.current;
-			const currentMaximized = maximizedWindowsRef.current;
-			updateSearch({
-				open: current.filter((w) => w !== id),
-				maximized: currentMaximized.filter((w) => w !== id),
+			update({
+				open: search.current.open.filter((item) => item !== id),
+				maximized: search.current.maximized.filter((item) => item !== id),
+				...(id === "fileViewer" ? { file: undefined } : {}),
 			});
-			dispatch({ type: "REMOVE", id });
+			setZOrder((previous) => previous.filter((item) => item !== id));
+			setMinimized((previous) => previous.filter((item) => item !== id));
 		},
-		[updateSearch],
+		[update],
 	);
-
-	const toggle = useCallback(
-		(id: string) => {
-			if (openSet.has(id)) {
-				close(id);
-			} else {
-				open(id);
-			}
-		},
-		[openSet, open, close],
-	);
-
-	const bringToFront = useCallback(
-		(id: string) => dispatch({ type: "BRING_TO_FRONT", id }),
-		[],
-	);
-
-	const getZIndex = useCallback(
-		(id: string) => {
-			const index = state.zOrder.indexOf(id);
-			if (index === -1) return 1;
-			return Math.min(index + 2, MAX_Z);
-		},
-		[state.zOrder],
-	);
-
-	const isMaximized = useCallback(
-		(id: string) => maximizedSet.has(id),
-		[maximizedSet],
-	);
-
-	const toggleMaximized = useCallback(
-		(id: string) => {
-			const current = maximizedWindowsRef.current;
-			if (current.includes(id)) {
-				updateSearch({ maximized: current.filter((w) => w !== id) });
-			} else {
-				updateSearch({ maximized: [...current, id] });
-			}
-		},
-		[updateSearch],
-	);
-
 	const setOpenFile = useCallback(
-		(fileName: string | undefined) => {
-			if (fileName) {
-				const current = openWindowsRef.current;
-				updateSearch({
-					file: fileName,
-					open: current.includes("fileViewer")
-						? current
-						: [...current, "fileViewer"],
-				});
-				dispatch({ type: "BRING_TO_FRONT", id: "fileViewer" });
-			} else {
-				const current = openWindowsRef.current;
-				const currentMaximized = maximizedWindowsRef.current;
-				updateSearch({
-					file: undefined,
-					open: current.filter((w) => w !== "fileViewer"),
-					maximized: currentMaximized.filter((w) => w !== "fileViewer"),
-				});
-				dispatch({ type: "REMOVE", id: "fileViewer" });
+		(id: string | undefined) => {
+			if (!id) {
+				close("fileViewer");
+				return;
 			}
+			update({
+				file: id,
+				open: [...new Set([...search.current.open, "fileViewer"])],
+			});
+			setMinimized((previous) =>
+				previous.filter((item) => item !== "fileViewer"),
+			);
+			bringToFront("fileViewer");
 		},
-		[updateSearch],
+		[update, close, bringToFront],
 	);
-
+	const setOpenFolder = useCallback(
+		(id: string) => {
+			update({
+				folder: id,
+				open: [...new Set([...search.current.open, "finder"])],
+			});
+			setMinimized((previous) => previous.filter((item) => item !== "finder"));
+			bringToFront("finder");
+		},
+		[update, bringToFront],
+	);
+	// Keep the live stack authoritative; Set would preserve the original open order.
+	const order = [
+		...openWindows.filter((id) => !zOrder.includes(id)),
+		...zOrder.filter((id) => openWindows.includes(id)),
+	];
 	return (
-		<WindowManagerContext.Provider
+		<Context.Provider
 			value={{
-				isOpen,
+				isOpen: (id) => openWindows.includes(id),
 				open,
 				close,
-				toggle,
 				bringToFront,
-				getZIndex,
-				isMaximized,
-				toggleMaximized,
+				getZIndex: (id) => 10 + order.indexOf(id),
+				activeWindow: order.filter((id) => !minimized.includes(id)).at(-1),
+				isMaximized: (id) => maximizedWindows.includes(id),
+				toggleMaximized: (id) => {
+					update({
+						maximized: search.current.maximized.includes(id)
+							? search.current.maximized.filter((item) => item !== id)
+							: [...search.current.maximized, id],
+					});
+					bringToFront(id);
+				},
+				isMinimized: (id) => minimized.includes(id),
+				minimize: (id) =>
+					setMinimized((previous) => [...new Set([...previous, id])]),
 				openFile,
 				setOpenFile,
+				openFolder: openFolder ?? "home",
+				setOpenFolder,
+				frames,
+				setFrame: (id, frame) =>
+					setFrames((previous) => ({ ...previous, [id]: frame })),
 			}}
 		>
 			{children}
-		</WindowManagerContext.Provider>
+		</Context.Provider>
 	);
 }
 
 export function useWindowManager() {
-	const ctx = useContext(WindowManagerContext);
-	if (!ctx)
+	const context = useContext(Context);
+	if (!context)
 		throw new Error(
 			"useWindowManager must be used within WindowManagerProvider",
 		);
-	return ctx;
+	return context;
 }

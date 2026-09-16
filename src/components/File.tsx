@@ -1,143 +1,110 @@
-import { useMutation } from "convex/react";
-import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type RefObject, useEffect, useRef, useState } from "react";
 import { Rnd } from "react-rnd";
-import { useClickOutside } from "@/hooks/useClickOutside";
-import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
+import { FileIcon } from "@/components/FileIcon";
+import { useContextMenu } from "@/contexts/ContextMenuContext";
+import { useWindowManager } from "@/contexts/WindowManagerContext";
+import type { DesktopFile } from "@/lib/fileSystem";
 
-const FileContextMenu = ({
-	open,
-	rename,
-	deleteFile,
+export default function DesktopFileIcon({
+	file,
+	index,
+	parentRef,
+	onOpen,
 }: {
-	open: () => void;
-	rename: () => void;
-	deleteFile: () => void;
-}) => {
-	return (
-		<div className="absolute bg-gray-800 border border-gray-600 rounded shadow-lg z-50">
-			<div
-				className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-				onClick={open}
-			>
-				Open
-			</div>
-			<div
-				className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-				onClick={rename}
-			>
-				Rename
-			</div>
-			<div
-				className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-				onClick={deleteFile}
-			>
-				Delete
-			</div>
-		</div>
-	);
-};
-
-export default function FileComponent({
-	id,
-	name,
-	onClick,
-	icon,
-	position,
-	fileContextMenuOpen,
-}: {
-	id?: Id<"files">;
-	name: string;
-	onClick: () => void;
-	icon: React.ReactNode;
-	position?: { x: number; y: number };
-	fileContextMenuOpen?: (open: boolean) => void;
+	file: DesktopFile;
+	index: number;
+	parentRef: RefObject<HTMLDivElement | null>;
+	onOpen: () => void;
 }) {
-	const [onFocus, setOnFocus] = useState(false);
-	const [positionState, setPositionState] = useState(position);
-	const [openContextMenu, setOpenContextMenu] = useState(false);
-	const fileRef = useRef<HTMLDivElement>(null);
-
-	const deleteFile = useMutation(api.files.deleteFile);
-	const renameFile = useMutation(api.files.renameFile);
-	const updateFilePosition = useMutation(api.files.updateFilePosition);
-
-	useClickOutside(
-		fileRef,
-		useCallback(() => {
-			setOnFocus(false);
-			setOpenContextMenu(false);
-			fileContextMenuOpen?.(false);
-		}, [fileContextMenuOpen]),
-	);
-
+	const { showContextMenu } = useContextMenu();
+	const wm = useWindowManager();
+	const [bounds, setBounds] = useState({ width: 1100, height: 720 });
+	const [position, setPosition] = useState<{ x: number; y: number }>();
+	const moved = useRef(false);
 	useEffect(() => {
-		if (openContextMenu) {
-			fileContextMenuOpen?.(true);
+		const parent = parentRef.current;
+		if (!parent) return;
+		const observer = new ResizeObserver(() =>
+			setBounds({ width: parent.clientWidth, height: parent.clientHeight }),
+		);
+		observer.observe(parent);
+		try {
+			const saved = JSON.parse(
+				localStorage.getItem(`cris-desktop-icon-${file.id}`) ?? "null",
+			);
+			if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y))
+				setPosition(saved);
+		} catch {
+			/* Icon placement is optional when browser storage is unavailable. */
 		}
-	}, [openContextMenu, fileContextMenuOpen]);
-
+		return () => observer.disconnect();
+	}, [file.id, parentRef]);
+	const mobile = bounds.width < 640;
+	const width = mobile ? 80 : 99;
+	const height = 100;
+	const x = Math.max(
+		0,
+		Math.min(position?.x ?? bounds.width - width - 14, bounds.width - width),
+	);
+	const y = Math.max(
+		0,
+		Math.min(position?.y ?? 15 + index * 114, bounds.height - height),
+	);
 	return (
 		<Rnd
-			default={{ x: 20, y: 20, width: 100, height: 100 }}
-			minWidth={80}
-			minHeight={80}
+			size={{ width, height }}
+			position={{ x, y }}
 			bounds="parent"
-			dragGrid={[20, 20]}
 			enableResizing={false}
-			onDrag={(e, d) => {
-				setPositionState({ x: d.x, y: d.y });
-				id && updateFilePosition({ fileId: id, position: { x: d.x, y: d.y } });
+			dragGrid={[10, 10]}
+			style={{ zIndex: 1 }}
+			onDragStart={() => {
+				moved.current = false;
 			}}
-			position={positionState}
+			onDrag={() => {
+				moved.current = true;
+			}}
+			onDragStop={(_, data) => {
+				if (!moved.current) return;
+				const next = { x: data.x, y: data.y };
+				setPosition(next);
+				try {
+					localStorage.setItem(
+						`cris-desktop-icon-${file.id}`,
+						JSON.stringify(next),
+					);
+				} catch {
+					/* Keep session placement. */
+				}
+			}}
 		>
-			<div
-				ref={fileRef}
-				className={`w-full h-full flex flex-col items-center justify-center cursor-pointer ${onFocus ? "bg-sky-600/30" : "bg-transparent"} rounded-lg p-2 hover:bg-sky-600/20`}
-				onBlur={() => setOnFocus(false)}
-				onDoubleClick={onClick}
-				onClick={() => setOnFocus(true)}
-				onTouchStart={() => {
-					setOnFocus(true);
-					onClick();
+			<button
+				type="button"
+				className="desktop-file"
+				style={{ width: "100%", height: "100%" }}
+				aria-label={file.name}
+				onContextMenu={(event) =>
+					showContextMenu(event, `${file.name} actions`, [
+						{ label: "Open", onSelect: onOpen },
+						{
+							label: "Show in Finder",
+							onSelect: () => wm.setOpenFolder(file.parentId),
+						},
+					])
+				}
+				onDoubleClick={() => {
+					if (!moved.current) onOpen();
 				}}
-				onContextMenu={(e) => {
-					e.preventDefault();
-					e.stopPropagation();
-					setOnFocus(true);
-					setOpenContextMenu(true);
+				onClick={(event) => {
+					if (event.detail === 0) onOpen();
+				}}
+				onPointerUp={(event) => {
+					if (event.pointerType === "touch" && !moved.current) onOpen();
 				}}
 			>
-				{openContextMenu && (
-					<FileContextMenu
-						open={() => {
-							onClick();
-							setOpenContextMenu(false);
-						}}
-						rename={() => {
-							const newName = prompt("Enter new file name", name);
-							if (newName && id) {
-								renameFile({ fileId: id, newName });
-							}
-							setOpenContextMenu(false);
-						}}
-						deleteFile={() => {
-							const confirmDelete = confirm(
-								`Are you sure you want to delete ${name}?`,
-							);
-							if (confirmDelete && id) {
-								deleteFile({ fileId: id });
-							}
-							setOpenContextMenu(false);
-						}}
-					/>
-				)}
-				<div className="text-sky-400 mb-2 text-shadow-lg">{icon}</div>
-				<div className="text-sm text-white text-center px-2 text-shadow-lg">
-					{name}
-				</div>
-			</div>
+				<FileIcon file={file} />
+				<span>{file.type === "directory" ? file.name : "Read me"}</span>
+			</button>
 		</Rnd>
 	);
 }

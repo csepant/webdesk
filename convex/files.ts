@@ -1,13 +1,41 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-
-export const getFiles = query({
+export const getRootFiles = query({
   handler: async (ctx) => {
-    return await ctx.db.query("files").filter((q) => q.neq(q.field("deleted"), true)).collect();
+    return await ctx.db
+      .query("files")
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("parentId"), undefined),
+          q.neq(q.field("deleted"), true),
+        ),
+      )
+      .collect();
   },
 });
 
+export const getFilesByParent = query({
+  args: {
+    parentId: v.id("files"),
+  },
+  handler: async (ctx, { parentId }) => {
+    return await ctx.db
+      .query("files")
+      .withIndex("by_parent", (q) => q.eq("parentId", parentId))
+      .filter((q) => q.neq(q.field("deleted"), true))
+      .collect();
+  },
+});
+
+export const getFileById = query({
+  args: {
+    fileId: v.id("files"),
+  },
+  handler: async (ctx, { fileId }) => {
+    return await ctx.db.get(fileId);
+  },
+});
 
 export const getFileByName = query({
   args: {
@@ -24,19 +52,26 @@ export const getFileByName = query({
 export const createFile = mutation({
   args: {
     name: v.string(),
-    content: v.string(),
+    type: v.union(v.literal("file"), v.literal("directory"), v.literal("app")),
+    content: v.optional(v.string()),
+    appComponent: v.optional(v.string()),
+    parentId: v.optional(v.id("files")),
+    modifiable: v.boolean(),
     position: v.optional(v.object({
       x: v.number(),
       y: v.number(),
     })),
   },
-  handler: async (ctx, { name, content, position }) => {
+  handler: async (ctx, args) => {
     const fileId = await ctx.db.insert("files", {
-      name,
-      content,
+      name: args.name,
+      type: args.type,
+      content: args.content,
+      appComponent: args.appComponent,
+      parentId: args.parentId,
+      modifiable: args.modifiable,
       updatedAt: new Date().toISOString(),
-      position: position,
-
+      position: args.position,
     });
     return fileId;
   },
@@ -48,6 +83,10 @@ export const updateFileContent = mutation({
     newContent: v.string(),
   },
   handler: async (ctx, { fileId, newContent }) => {
+    const doc = await ctx.db.get(fileId);
+    if (!doc || doc.modifiable === false) {
+      throw new Error("This file cannot be modified.");
+    }
     await ctx.db.patch(fileId, {
       content: newContent,
       updatedAt: new Date().toISOString(),
@@ -61,6 +100,10 @@ export const renameFile = mutation({
     newName: v.string(),
   },
   handler: async (ctx, { fileId, newName }) => {
+    const doc = await ctx.db.get(fileId);
+    if (!doc || doc.modifiable === false) {
+      throw new Error("This file cannot be modified.");
+    }
     await ctx.db.patch(fileId, {
       name: newName,
       updatedAt: new Date().toISOString(),
@@ -73,6 +116,10 @@ export const deleteFile = mutation({
     fileId: v.id("files"),
   },
   handler: async (ctx, { fileId }) => {
+    const doc = await ctx.db.get(fileId);
+    if (!doc || doc.modifiable === false) {
+      throw new Error("This file cannot be deleted.");
+    }
     await ctx.db.patch(fileId, {
       deleted: true,
       updatedAt: new Date().toISOString(),
@@ -95,4 +142,3 @@ export const updateFilePosition = mutation({
     });
   },
 });
-

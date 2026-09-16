@@ -1,8 +1,8 @@
-import { useRef } from 'react';
 
 
-export function Widget({ title, content, position }: { title: string; content: React.ReactNode; position?: { x: number; y: number } }) {
-  const widgetRef = useRef<HTMLDivElement>(null);
+
+export function Widget({ title, content }: { title: string; content: React.ReactNode; position?: { x: number; y: number } }) {
+
 
 
   return (

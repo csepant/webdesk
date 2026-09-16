@@ -1,199 +1,157 @@
-import { Maximize2, X } from "lucide-react";
-import moment from "moment";
-import type React from "react";
-import { useEffect, useState } from "react";
+import { Maximize2, Minimize2, Minus, X } from "lucide-react";
+import { type ReactNode, type RefObject, useEffect, useState } from "react";
 import { Rnd } from "react-rnd";
+import { useContextMenu } from "@/contexts/ContextMenuContext";
 import { useWindowManager } from "@/contexts/WindowManagerContext";
+import { fitFrame, initialFrame } from "@/lib/windowGeometry";
 
-export default function WindowComponent({
+export default function Window({
 	title,
-	subtitle,
 	content,
-	open,
-	handler,
 	parentRef,
-	createdAt,
-	updatedAt,
 	windowId,
+	toolbar,
 }: {
 	title: string;
-	subtitle: string;
-	content: React.ReactNode;
-	open?: boolean;
-	handler?: () => void;
-	parentRef?: React.RefObject<HTMLDivElement | null>;
-	createdAt?: number;
-	updatedAt?: string;
-	windowId?: string;
+	content: ReactNode;
+	parentRef: RefObject<HTMLDivElement | null>;
+	windowId: string;
+	toolbar?: ReactNode;
 }) {
-	const DEFAULT_WIDTH = 800;
-	const DEFAULT_HEIGHT = 600;
-
-	const { bringToFront, getZIndex, isMaximized, toggleMaximized } =
-		useWindowManager();
-	const zIndex = windowId ? getZIndex(windowId) : 1;
-	const maximized = windowId ? isMaximized(windowId) : false;
-
-	const [windowWidth, setWindowWidth] = useState(
-		parentRef?.current ? parentRef.current.offsetWidth : DEFAULT_WIDTH,
-	);
-	const [windowHeight, setWindowHeight] = useState(
-		parentRef?.current ? parentRef.current.offsetHeight : DEFAULT_HEIGHT,
-	);
-	const [defaultX, setDefaultX] = useState(windowWidth / 2 - 200);
-	const [defaultY, setDefaultY] = useState(windowHeight / 2 - 150);
-
-	const handleOnFocus = () => {
-		if (windowId) bringToFront(windowId);
-	};
-
-	const PADDING = 16 * 2;
-	const handleMaximize = () => {
-		if (windowId) toggleMaximized(windowId);
-		setWindowWidth(
-			parentRef?.current
-				? parentRef.current.offsetWidth - PADDING
-				: DEFAULT_WIDTH - PADDING,
-		);
-		setWindowHeight(
-			parentRef?.current
-				? parentRef.current.offsetHeight - PADDING
-				: DEFAULT_HEIGHT - PADDING,
-		);
-	};
-
-	// Sync dimensions when maximized on mount or when maximized changes
+	const manager = useWindowManager();
+	const { showContextMenu } = useContextMenu();
+	const [bounds, setBounds] = useState({ width: 1100, height: 720 });
 	useEffect(() => {
-		if (maximized && parentRef?.current) {
-			setWindowWidth(parentRef.current.offsetWidth - PADDING);
-			setWindowHeight(parentRef.current.offsetHeight - PADDING);
-		}
-	}, [maximized, parentRef, PADDING]);
-
-	useEffect(() => {
-		const handleResize = () => {
-			const w = parentRef?.current
-				? parentRef.current.offsetWidth
-				: DEFAULT_WIDTH;
-			const h = parentRef?.current
-				? parentRef.current.offsetHeight
-				: DEFAULT_HEIGHT;
-			setWindowWidth(w);
-			setWindowHeight(h);
-			if (!maximized) {
-				setDefaultX(w / 2 - 200);
-				setDefaultY(h / 2 - 150);
-			}
-		};
-
-		window.addEventListener("resize", handleResize);
-		return () => {
-			window.removeEventListener("resize", handleResize);
-		};
-	}, [maximized, parentRef]);
-
-	if (!open) return null;
+		const parent = parentRef.current;
+		if (!parent) return;
+		const measure = () =>
+			setBounds({ width: parent.clientWidth, height: parent.clientHeight });
+		measure();
+		const observer = new ResizeObserver(measure);
+		observer.observe(parent);
+		return () => observer.disconnect();
+	}, [parentRef]);
+	if (!manager.isOpen(windowId)) return null;
+	const mobile = bounds.width < 640;
+	const maximized = manager.isMaximized(windowId);
+	const frame = fitFrame(
+		manager.frames[windowId] ?? initialFrame(windowId, bounds),
+		bounds,
+	);
+	const displayed = maximized || mobile ? { x: 0, y: 0, ...bounds } : frame;
 	return (
 		<Rnd
-			default={{ x: defaultX, y: defaultY, width: "400", height: "600" }}
-			size={
-				maximized ? { width: windowWidth, height: windowHeight } : undefined
-			}
-			position={maximized ? { x: 0, y: 0 } : undefined}
-			enableResizing={!maximized}
-			disableDragging={maximized}
-			height={"100%"}
-			width={"100%"}
+			data-window-id={windowId}
+			className={`desktop-window ${manager.activeWindow === windowId ? "is-active" : "is-inactive"}`}
+			size={{ width: displayed.width, height: displayed.height }}
+			position={{ x: displayed.x, y: displayed.y }}
 			bounds="parent"
-			onDragStart={handleOnFocus}
-			onResizeStart={handleOnFocus}
-			onMouseDown={handleOnFocus}
+			minWidth={Math.min(400, bounds.width)}
+			minHeight={Math.min(300, bounds.height)}
+			maxWidth={bounds.width}
+			maxHeight={bounds.height}
+			disableDragging={maximized || mobile}
+			enableResizing={!maximized && !mobile}
 			dragHandleClassName="window-drag-handle"
-			minWidth={300}
-			minHeight={200}
-			style={{ zIndex }}
+			cancel="button, input, select, a"
+			onDragStart={() => manager.bringToFront(windowId)}
+			onResizeStart={() => manager.bringToFront(windowId)}
+			onDragStop={(_, data) =>
+				manager.setFrame(
+					windowId,
+					fitFrame({ ...frame, x: data.x, y: data.y }, bounds),
+				)
+			}
+			onResizeStop={(_, __, element, ___, position) =>
+				manager.setFrame(
+					windowId,
+					fitFrame(
+						{
+							...position,
+							width: element.offsetWidth,
+							height: element.offsetHeight,
+						},
+						bounds,
+					),
+				)
+			}
+			style={{
+				zIndex: manager.getZIndex(windowId),
+				display: manager.isMinimized(windowId) ? "none" : undefined,
+			}}
 		>
-			<div
-				className="w-full h-full max-h-800  backdrop-blur-lg border-2 border-sky-600/50 rounded-lg shadow-lg "
-				style={{
-					clipPath:
-						"polygon(0 0, calc(100% - 30px) 0, 100% 30px, 100% 100%, 0 100%, 30px 100%, 0 calc(100% - 30px))",
-				}}
+			<section
+				role="dialog"
+				aria-label={title}
+				className="window-shell"
+				onPointerDownCapture={() => manager.bringToFront(windowId)}
+				onFocusCapture={() => manager.bringToFront(windowId)}
 			>
 				<div
-					className={`absolute inset-0 transition-colors duration-300 bg-sky-600`}
-					style={{
-						clipPath:
-							"polygon(0 0, calc(100% - 30px) 0, 100% 30px, 100% 100%, 0 100%,  30px 100%, 0 calc(100% - 30px))",
-						margin: "-10px",
+					role="toolbar"
+					aria-label="Window controls"
+					onContextMenu={(event) => {
+						manager.bringToFront(windowId);
+						showContextMenu(event, `${title} window actions`, [
+							{
+								label: "Bring to front",
+								onSelect: () => manager.bringToFront(windowId),
+							},
+							{
+								label: "Minimize",
+								icon: <Minus size={15} />,
+								onSelect: () => manager.minimize(windowId),
+							},
+							{
+								label: maximized ? "Restore size" : "Zoom",
+								icon: <Maximize2 size={15} />,
+								onSelect: () => manager.toggleMaximized(windowId),
+							},
+							{
+								label: "Close window",
+								icon: <X size={15} />,
+								onSelect: () => manager.close(windowId),
+								separatorBefore: true,
+							},
+						]);
 					}}
-				/>
-				<div
-					className="relative h-full bg-slate-900/95 backdrop-blur-sm overflow-hidden"
-					style={{
-						clipPath:
-							"polygon(0 0, calc(100% - 30px) 0, 100% 30px, 100% 100%, 0 100%, 30px 100%, 0 calc(100% - 30px))",
+					className="window-titlebar window-drag-handle"
+					onDoubleClick={(event) => {
+						if (!(event.target as HTMLElement).closest("button,input"))
+							manager.toggleMaximized(windowId);
 					}}
 				>
-					<div className="text-sm font-mono text-sky-500  mb-2">
-						<div
-							data-testid="window-controls"
-							className="window-drag-handle grid grid-cols-4 w-full h-fit space-x-2"
+					<div className="traffic-lights">
+						<button
+							type="button"
+							className="traffic-light close"
+							aria-label={`Close ${title}`}
+							onClick={() => manager.close(windowId)}
 						>
-							<div className="grid col-span-4 px-8 w-full h-full bg-slate-950/50 cursor-move relative rounded-t-lg">
-								<div
-									data-testid="window-title"
-									className="font-bold text-white py-4"
-								>
-									{title}
-								</div>
-
-								<div className="absolute right-4 top-2 flex space-x-2">
-									<div
-										className="flex items-center h-8 w-8 text-green-200 space-x-2 bg-green-500/50 p-2 rounded-full cursor-pointer"
-										onClick={() => {
-											handleMaximize();
-										}}
-										onTouchStart={() => {
-											handleMaximize();
-										}}
-									>
-										<Maximize2 className="h-full w-auto" size={18} />
-									</div>
-									<div
-										className="flex items-center h-8 w-8 float-right text-red-200 bg-red-500/50 p-2 cursor-pointer rounded-full"
-										onClick={handler}
-										onTouchStart={handler}
-									>
-										<X className="h-full w-auto" size={18} />
-									</div>
-								</div>
-							</div>
-						</div>
+							<X size={9} strokeWidth={3} />
+						</button>
+						<button
+							type="button"
+							className="traffic-light minimize"
+							aria-label={`Minimize ${title}`}
+							onClick={() => manager.minimize(windowId)}
+						>
+							<Minus size={9} strokeWidth={3} />
+						</button>
+						<button
+							type="button"
+							className="traffic-light maximize"
+							aria-label={`${maximized ? "Restore" : "Maximize"} ${title}`}
+							onClick={() => manager.toggleMaximized(windowId)}
+						>
+							{maximized ? <Minimize2 size={8} /> : <Maximize2 size={8} />}
+						</button>
 					</div>
-					<div className="px-8 overflow-y-autow h-[calc(100%-72px)] flex flex-col">
-						<div className=" text-sky-500 py-2 font-semibold">{subtitle}</div>
-
-						<div className="border-t border-sky-600/50 py-4 text-white/70 overflow-y-auto h-[calc(100%-120px)] border-b">
-							{content}
-						</div>
-					</div>
-
-					{/* Meta Info */}
-					<div className="absolute bottom-2 right-2 text-xs text-white/30">
-						{updatedAt && (
-							<span className="mr-4">
-								Updated At: {moment(updatedAt).fromNow()}
-							</span>
-						)}
-						{createdAt && (
-							<span className="hover:hidden">
-								Created At: {moment(createdAt).fromNow()}
-							</span>
-						)}
-					</div>
+					<span className="window-title">{title}</span>
+					<div className="window-toolbar">{toolbar}</div>
 				</div>
-			</div>
+				<div className="window-content">{content}</div>
+			</section>
 		</Rnd>
 	);
 }

@@ -1,9 +1,7 @@
 import { useMutation } from "convex/react";
-import type { RefObject } from "react";
-import { useState } from "react";
-import Button from "@/components/Button";
+import { ArrowUpRight, Check, LoaderCircle, Mail } from "lucide-react";
+import { type RefObject, useState } from "react";
 import Window from "@/components/Window";
-import { useWindowManager } from "@/contexts/WindowManagerContext";
 import { api } from "../../../convex/_generated/api";
 
 export function ContactWindow({
@@ -11,7 +9,6 @@ export function ContactWindow({
 }: {
 	parentRef: RefObject<HTMLDivElement | null>;
 }) {
-	const { isOpen, close } = useWindowManager();
 	const [formData, setFormData] = useState({
 		name: "",
 		email: "",
@@ -19,88 +16,127 @@ export function ContactWindow({
 	});
 	const [submitted, setSubmitted] = useState(false);
 	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState("");
 	const submitContactForm = useMutation(api.contact.submitContactForm);
-
-	if (!isOpen("contact")) return null;
-
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
+	const handleSubmit = async (event: React.FormEvent) => {
+		event.preventDefault();
+		if (loading) return;
 		setLoading(true);
-		await submitContactForm(formData);
-		setSubmitted(true);
-		setLoading(false);
-		setFormData({ name: "", email: "", message: "" });
+		setError("");
+		try {
+			await submitContactForm(formData);
+			setSubmitted(true);
+			setFormData({ name: "", email: "", message: "" });
+		} catch {
+			setError("Your message couldn't be sent. Please try again in a moment.");
+		} finally {
+			setLoading(false);
+		}
 	};
-
 	return (
 		<Window
-			open={true}
-			title="ContactMe.app"
-			subtitle="Get in touch"
+			title="Mail"
 			windowId="contact"
+			parentRef={parentRef}
 			content={
-				<div>
-					<p>If you'd like to get in touch, use the contact form below:</p>
-					<form className="mt-4" onSubmit={handleSubmit}>
-						<div className="mb-4">
-							<label className="block text-sm font-medium mb-1" htmlFor="name">
-								Name:
-							</label>
-							<input
-								value={formData.name}
-								required
-								onChange={(e) =>
-									setFormData({ ...formData, name: e.target.value })
-								}
-								type="text"
-								id="name"
-								className="w-full p-2 border border-sky-600 rounded bg-slate-800 text-white"
-							/>
-						</div>
-						<div className="mb-4">
-							<label className="block text-sm font-medium mb-1" htmlFor="email">
-								Email:
-							</label>
-							<input
-								type="email"
-								id="email"
-								required
-								className="w-full p-2 border border-sky-600 rounded bg-slate-800 text-white"
-								value={formData.email}
-								onChange={(e) =>
-									setFormData({ ...formData, email: e.target.value })
-								}
-							/>
-						</div>
-						<div className="mb-4">
-							<label
-								className="block text-sm font-medium mb-1"
-								htmlFor="message"
+				<div className="contact-content">
+					<div className="contact-symbol">
+						<Mail size={26} />
+					</div>
+					<div className="eyebrow">LET'S CONNECT</div>
+					<h1>
+						Good things start
+						<br />
+						with a hello<span>.</span>
+					</h1>
+					<p>
+						Have an idea, a question, or just want to chat?
+						<br />
+						I'd love to hear from you.
+					</p>
+					{submitted ? (
+						<div className="contact-success" aria-live="polite">
+							<Check size={28} />
+							<h2>Message delivered.</h2>
+							<p>Thanks for stopping by. I'll get back to you soon.</p>
+							<button
+								type="button"
+								className="secondary-button"
+								onClick={() => setSubmitted(false)}
 							>
-								Message:
-							</label>
-							<textarea
-								id="message"
-								rows={4}
-								required
-								className="w-full p-2 border border-sky-600 rounded bg-slate-800 text-white"
-								value={formData.message}
-								onChange={(e) =>
-									setFormData({ ...formData, message: e.target.value })
-								}
-							/>
+								Write another message
+							</button>
 						</div>
-						<Button isLoading={loading}>Send</Button>
-					</form>
-					{submitted && (
-						<p className="mt-4 text-green-400 font-semibold">
-							Thank you for reaching out! I'll get back to you soon.
-						</p>
+					) : (
+						<form onSubmit={handleSubmit} className="contact-form">
+							<div className="contact-fields">
+								<label>
+									Your name
+									<input
+										name="name"
+										autoComplete="name"
+										required
+										value={formData.name}
+										onChange={(event) =>
+											setFormData({ ...formData, name: event.target.value })
+										}
+										placeholder="Alex"
+									/>
+								</label>
+								<label>
+									Email address
+									<input
+										name="email"
+										type="email"
+										autoComplete="email"
+										required
+										value={formData.email}
+										onChange={(event) =>
+											setFormData({ ...formData, email: event.target.value })
+										}
+										placeholder="alex@example.com"
+									/>
+								</label>
+							</div>
+							<label>
+								What's on your mind?
+								<textarea
+									name="message"
+									required
+									rows={4}
+									value={formData.message}
+									onChange={(event) =>
+										setFormData({ ...formData, message: event.target.value })
+									}
+									placeholder="Hey Cris, I was thinking…"
+								/>
+							</label>
+							{error && (
+								<p role="alert" className="inline-error">
+									{error}
+								</p>
+							)}
+							<button
+								type="submit"
+								className="primary-button"
+								disabled={loading}
+							>
+								{loading ? (
+									<>
+										<LoaderCircle size={16} className="animate-spin" />
+										Sending…
+									</>
+								) : (
+									<>
+										Send message
+										<ArrowUpRight size={16} />
+									</>
+								)}
+							</button>
+						</form>
 					)}
 				</div>
 			}
-			handler={() => close("contact")}
-			parentRef={parentRef}
 		/>
 	);
 }
