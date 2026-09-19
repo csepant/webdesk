@@ -7,6 +7,8 @@ import {
 	FileText,
 	Folder,
 	Mail,
+	Pause,
+	Play,
 	Search,
 	SlidersHorizontal,
 	Sun,
@@ -16,8 +18,10 @@ import {
 	X,
 } from "lucide-react";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { AppearanceControl } from "@/components/AppearanceControl";
 import DesktopFileIcon from "@/components/File";
 import { FileIcon } from "@/components/FileIcon";
+import { GalaxyWallpaper } from "@/components/GalaxyWallpaper";
 import { Modal } from "@/components/Modal";
 import { ContactWindow } from "@/components/windows/ContactWindow";
 import { FileViewerWindow } from "@/components/windows/FileViewerWindow";
@@ -35,6 +39,8 @@ import {
 	WINDOW_IDS,
 	WindowManagerProvider,
 } from "@/contexts/WindowManagerContext";
+import { useAppearance } from "@/hooks/useAppearance";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { type DesktopFile, isInTrash } from "@/lib/fileSystem";
 
 const windowIds = (value: unknown, fallback: string[] = []) =>
@@ -106,13 +112,16 @@ function DockItem({
 
 function Desktop() {
 	const ribbonId = useId();
+	const appearance = useAppearance();
 	const { showContextMenu } = useContextMenu();
 	const desktopRef = useRef<HTMLDivElement>(null);
 	const wm = useWindowManager();
 	const fs = useFileSystem();
 	const [time, setTime] = useState<Date>();
 	const [menu, setMenu] = useState<string | null>(null);
-	const [wallpaper, setWallpaper] = useState("dawn");
+	const [wallpaper, setWallpaper] = useState("galaxy");
+	const [galaxyPaused, setGalaxyPaused] = useState(false);
+	const reducedMotion = useReducedMotion();
 	const [spotlight, setSpotlight] = useState(false);
 	const [query, setQuery] = useState("");
 	const [selectedResult, setSelectedResult] = useState(0);
@@ -245,7 +254,7 @@ function Desktop() {
 						separatorBefore: true,
 					},
 					{
-						label: "Change wallpaper…",
+						label: "Change appearance…",
 						icon: <SlidersHorizontal size={15} />,
 						onSelect: () => setMenu("appearance"),
 					},
@@ -258,42 +267,66 @@ function Desktop() {
 			}}
 		>
 			<div className="wallpaper" aria-hidden="true">
-				<div className="wallpaper-glow" />
-				<svg
-					aria-hidden="true"
-					viewBox="0 0 1440 1000"
-					preserveAspectRatio="xMidYMid slice"
-				>
-					<defs>
-						<linearGradient id={`${ribbonId}-1`} x1="0" y1="0" x2="1" y2="1">
-							<stop stopColor="#d398ba" />
-							<stop offset=".46" stopColor="#ac95c4" />
-							<stop offset="1" stopColor="#606da5" />
-						</linearGradient>
-						<linearGradient id={`${ribbonId}-2`} x1="0" y1="0" x2=".7" y2="1">
-							<stop stopColor="#efb29f" />
-							<stop offset=".5" stopColor="#ca8fbc" />
-							<stop offset="1" stopColor="#7274b0" />
-						</linearGradient>
-						<linearGradient id={`${ribbonId}-3`} x1="0" y1="0" x2="1" y2="1">
-							<stop stopColor="#fbd6b9" />
-							<stop offset=".45" stopColor="#dda6b8" />
-							<stop offset="1" stopColor="#9e8fc2" />
-						</linearGradient>
-					</defs>
-					<path
-						d="M-200 660C100 40 565 10 670 285S1000 780 1640 270L1700 1100H-200Z"
-						fill={`url(#${ribbonId}-1)`}
-					/>
-					<path
-						d="M-220 1000C-30 530 480 150 650 400S1010 950 1640 480L1650 1150H-220Z"
-						fill={`url(#${ribbonId}-2)`}
-					/>
-					<path
-						d="M-150 1160C110 660 530 390 700 600S1110 1090 1640 790L1700 1200Z"
-						fill={`url(#${ribbonId}-3)`}
-					/>
-				</svg>
+				{wallpaper === "galaxy" ? (
+					<GalaxyWallpaper paused={galaxyPaused || reducedMotion} />
+				) : (
+					<>
+						<div className="wallpaper-glow" />
+						<svg
+							aria-hidden="true"
+							viewBox="0 0 1440 1000"
+							preserveAspectRatio="xMidYMid slice"
+						>
+							<defs>
+								<linearGradient
+									id={`${ribbonId}-1`}
+									x1="0"
+									y1="0"
+									x2="1"
+									y2="1"
+								>
+									<stop stopColor="#d398ba" />
+									<stop offset=".46" stopColor="#ac95c4" />
+									<stop offset="1" stopColor="#606da5" />
+								</linearGradient>
+								<linearGradient
+									id={`${ribbonId}-2`}
+									x1="0"
+									y1="0"
+									x2=".7"
+									y2="1"
+								>
+									<stop stopColor="#efb29f" />
+									<stop offset=".5" stopColor="#ca8fbc" />
+									<stop offset="1" stopColor="#7274b0" />
+								</linearGradient>
+								<linearGradient
+									id={`${ribbonId}-3`}
+									x1="0"
+									y1="0"
+									x2="1"
+									y2="1"
+								>
+									<stop stopColor="#fbd6b9" />
+									<stop offset=".45" stopColor="#dda6b8" />
+									<stop offset="1" stopColor="#9e8fc2" />
+								</linearGradient>
+							</defs>
+							<path
+								d="M-200 660C100 40 565 10 670 285S1000 780 1640 270L1700 1100H-200Z"
+								fill={`url(#${ribbonId}-1)`}
+							/>
+							<path
+								d="M-220 1000C-30 530 480 150 650 400S1010 950 1640 480L1650 1150H-220Z"
+								fill={`url(#${ribbonId}-2)`}
+							/>
+							<path
+								d="M-150 1160C110 660 530 390 700 600S1110 1090 1640 790L1700 1200Z"
+								fill={`url(#${ribbonId}-3)`}
+							/>
+						</svg>
+					</>
+				)}
 			</div>
 			<header className="menu-bar" ref={menuRef}>
 				<nav className="menu-left" aria-label="Desktop menu">
@@ -370,9 +403,11 @@ function Desktop() {
 						{menu === "appearance" && (
 							<div className="popover appearance-popover">
 								<h3>Make it yours</h3>
-								<p>Choose a desktop mood.</p>
+								<p>Make this desktop feel like you.</p>
+								<AppearanceControl {...appearance} />
+								<h4 className="wallpaper-label">Wallpaper</h4>
 								<div className="wallpaper-options">
-									{["dawn", "dusk", "midnight"].map((option) => (
+									{["galaxy", "dawn", "dusk", "midnight"].map((option) => (
 										<button
 											type="button"
 											key={option}
@@ -385,6 +420,25 @@ function Desktop() {
 										</button>
 									))}
 								</div>
+								{wallpaper === "galaxy" && (
+									<button
+										type="button"
+										className="galaxy-playback"
+										disabled={reducedMotion}
+										onClick={() => setGalaxyPaused((value) => !value)}
+									>
+										{galaxyPaused || reducedMotion ? (
+											<Play size={13} />
+										) : (
+											<Pause size={13} />
+										)}
+										{reducedMotion
+											? "Reduced motion is on"
+											: galaxyPaused
+												? "Resume galaxy"
+												: "Pause galaxy"}
+									</button>
+								)}
 								<span>
 									<Sun size={14} />A little change of scenery.
 								</span>

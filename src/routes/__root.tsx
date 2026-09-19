@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
+import { appearanceBootstrap } from "@/lib/appearance";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRouteWithContext<{
@@ -43,8 +44,9 @@ export const Route = createRootRouteWithContext<{
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en">
+		<html lang="en" suppressHydrationWarning>
 			<head>
+				<script>{appearanceBootstrap}</script>
 				<HeadContent />
 			</head>
 			<body className="overflow-y-hidden">

@@ -1,0 +1,103 @@
+.wallpaper-galaxy .wallpaper,
+html[data-theme="dark"] .wallpaper-galaxy .wallpaper {
+	background: #090c10;
+	filter: none;
+	pointer-events: none;
+}
+.galaxy-wallpaper {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	background: radial-gradient(
+		ellipse at 60% 45%,
+		#1b242e 0,
+		#0e141b 34%,
+		#090c10 75%
+	);
+}
+.galaxy-wallpaper::before {
+	content: "";
+	position: absolute;
+	inset: 16% 0;
+	background: radial-gradient(
+		ellipse at 60% 50%,
+		#ffdfae80 0,
+		#c3906538 4%,
+		#587fb52b 16%,
+		transparent 48%
+	);
+	transform: rotate(-24deg);
+	transition: opacity 0.8s;
+}
+.galaxy-wallpaper::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background:
+		radial-gradient(circle at 13% 28%, #d5dee9aa 0 0.6px, transparent 1.4px),
+		radial-gradient(circle at 27% 76%, #d5dee970 0 0.7px, transparent 1.5px),
+		radial-gradient(circle at 81% 18%, #d5dee990 0 0.6px, transparent 1.4px);
+	background-size:
+		347px 293px,
+		463px 397px,
+		557px 431px;
+}
+.galaxy-wallpaper[data-ready="true"]::before,
+.galaxy-wallpaper[data-ready="true"]::after {
+	opacity: 0;
+}
+.galaxy-wallpaper canvas {
+	position: absolute;
+	inset: 0;
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+.wallpaper-galaxy .desktop-intro {
+	color: #edf1f5;
+	text-shadow: 0 2px 20px #0008;
+}
+.wallpaper-galaxy .desktop-intro button {
+	border-color: #dce5ef40;
+	background: #dce5ef0c;
+}
+.wallpaper-galaxy .desktop-caption {
+	color: #c6d0da;
+}
+.wallpaper-galaxy .menu-bar {
+	background: #e9edf2d6;
+}
+.appearance-popover .wallpaper-options {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 8px;
+}
+.appearance-popover .wallpaper-options .wallpaper-swatch {
+	width: 100%;
+	height: 44px;
+}
+.swatch-galaxy {
+	background:
+		radial-gradient(
+			ellipse at 58% 45%,
+			#ffe5ba 0,
+			#bf9569 5%,
+			#5d83b66b 18%,
+			transparent 48%
+		), linear-gradient(145deg, #243343, #080c12);
+}
+.appearance-popover .galaxy-playback {
+	margin: -5px 0 14px;
+	padding: 7px 0;
+	font-size: 11px;
+	color: inherit;
+}
+.appearance-popover .galaxy-playback:hover:not(:disabled) {
+	background: #8b9caf1a;
+	color: inherit;
+}
+.appearance-popover .galaxy-playback:disabled {
+	opacity: 0.65;
+	background: none;
+	color: inherit;
+}

@@ -1,0 +1,492 @@
+:root {
+	color-scheme: light;
+}
+
+/* Appearance is independent of wallpaper and applies to body-level menu portals. */
+.appearance-control {
+	padding: 17px 0 14px;
+	margin: 0;
+	border: 0;
+	border-bottom: 1px solid #ded6e2;
+	min-width: 0;
+}
+.appearance-control legend,
+.wallpaper-label {
+	float: left;
+	width: 100%;
+	font-size: 10px;
+	font-weight: 600;
+	color: #76687f;
+	margin: 0 0 10px;
+}
+.appearance-options {
+	display: flex;
+	gap: 7px;
+	clear: both;
+}
+.appearance-option {
+	display: flex;
+	flex: 1;
+	min-width: 0;
+	flex-direction: column;
+	align-items: center;
+	gap: 7px;
+	padding: 12px 4px 9px;
+	border: 1px solid #dfd8e5;
+	border-radius: 7px;
+	background: #ffffff55;
+	color: #8f819a;
+	font-size: 10px;
+	cursor: pointer;
+}
+.appearance-option:hover {
+	background: #ebe4f0;
+}
+.appearance-option.selected {
+	background: #e4d9ef;
+	color: #6b4984;
+	border-color: #b29ac6;
+	box-shadow: 0 0 0 1px #b29ac626;
+}
+.appearance-option:has(input:focus-visible) {
+	outline: 2px solid #7397e8;
+	outline-offset: 3px;
+}
+.appearance-popover .appearance-status {
+	margin: 10px 0 0;
+	font-size: 9px;
+	line-height: 1.5;
+	min-height: 14px;
+	color: #897b94;
+}
+.appearance-popover .wallpaper-label {
+	margin: 15px 0 0;
+	float: none;
+}
+
+html[data-theme="dark"] {
+	color-scheme: dark;
+	--dark-surface: #242628;
+	--dark-raised: #303336;
+	--dark-border: #ffffff14;
+	--dark-text: #cbd0d5;
+	--dark-muted: #a4abb2;
+	--dark-heading: #f1f3f5;
+	--dark-accent: #d4dce4;
+	--dark-selection: #41484f;
+	background: #191b1d;
+	color: var(--dark-text);
+}
+html[data-theme="dark"] .wallpaper {
+	filter: grayscale(1) brightness(0.4);
+}
+html[data-theme="dark"] .wallpaper-dusk .wallpaper {
+	filter: grayscale(1) brightness(0.32);
+}
+html[data-theme="dark"] .wallpaper-midnight .wallpaper {
+	filter: grayscale(1) brightness(0.24);
+}
+html[data-theme="dark"] .menu-bar {
+	background: #1c1f22c7;
+	color: #e8edf1;
+	box-shadow: 0 1px #ffffff0c;
+}
+html[data-theme="dark"] .menu-button:hover,
+html[data-theme="dark"] .menu-button.selected {
+	background: #ffffff17;
+}
+html[data-theme="dark"] .desktop-intro {
+	color: #edf0f3;
+}
+html[data-theme="dark"] .desktop-intro button {
+	border-color: #e1e7ed40;
+	background: #e1e7ed0c;
+}
+html[data-theme="dark"] .desktop-intro button:hover {
+	background: #e1e7ed1c;
+}
+html[data-theme="dark"] .desktop-caption {
+	color: #cbd2d8;
+}
+html[data-theme="dark"] .desktop-file:focus {
+	background: #a6b2be29;
+	border-color: #b6c2ce58;
+}
+html[data-theme="dark"] .desktop-file > span:last-child {
+	background: #20262c20;
+	text-shadow: 0 1px 4px #0008;
+}
+
+html[data-theme="dark"] .window-shell {
+	background: var(--dark-surface);
+	border-color: #ffffff21;
+	box-shadow:
+		0 28px 70px -12px #0009,
+		0 4px 15px #0005,
+		0 0 0 1px #0005;
+}
+html[data-theme="dark"] .is-inactive .window-shell {
+	box-shadow:
+		0 10px 35px #0005,
+		0 0 0 1px #0004;
+}
+html[data-theme="dark"] .window-titlebar {
+	background: linear-gradient(#363a3e, #2e3235);
+	border-color: #ffffff09;
+}
+html[data-theme="dark"] .window-title {
+	color: #e0e5e9;
+}
+html[data-theme="dark"] .is-inactive .window-title {
+	color: #a0a7ae;
+}
+html[data-theme="dark"]
+	.is-inactive
+	.traffic-lights:not(:hover)
+	.traffic-light {
+	background: #62676c;
+}
+html[data-theme="dark"] .finder-sidebar {
+	background: linear-gradient(145deg, #2c3033f5, #282c2ff5);
+	border-color: var(--dark-border);
+}
+html[data-theme="dark"] .sidebar-profile strong {
+	color: #e5e9ed;
+}
+html[data-theme="dark"] .sidebar-profile img {
+	border-color: #ffffff25;
+}
+html[data-theme="dark"]
+	:is(
+		.sidebar-profile small,
+		.sidebar-label,
+		.sidebar-bottom,
+		.sidebar-item small,
+		.sidebar-item > svg
+	) {
+	color: var(--dark-muted);
+}
+html[data-theme="dark"] .sidebar-item {
+	color: var(--dark-text);
+}
+html[data-theme="dark"] .sidebar-item:hover {
+	background: #ffffff09;
+}
+html[data-theme="dark"] .sidebar-item.selected {
+	background: var(--dark-selection);
+	color: #e2e8ee;
+}
+html[data-theme="dark"] .finder-sheet > svg,
+html[data-theme="dark"] .sidebar-item.selected > svg {
+	color: var(--dark-accent);
+}
+html[data-theme="dark"] .finder-main {
+	background: var(--dark-surface);
+}
+html[data-theme="dark"]
+	:is(
+		.finder-toolbar,
+		.finder-welcome,
+		.finder-status,
+		.document-toolbar,
+		.spotlight-input
+	) {
+	border-color: var(--dark-border);
+}
+html[data-theme="dark"] :is(.icon-button, .view-switch button) {
+	color: var(--dark-muted);
+}
+html[data-theme="dark"]
+	:is(.icon-button:hover:not(:disabled), .view-switch button.selected) {
+	background: #3a4046;
+	color: #dde4eb;
+}
+html[data-theme="dark"] .finder-search {
+	background: #1d2023;
+	border-color: #ffffff17;
+	color: var(--dark-muted);
+}
+html[data-theme="dark"] .finder-search:focus-within {
+	border-color: #9aaaba;
+	box-shadow: 0 0 0 2px #9aaaba26;
+}
+html[data-theme="dark"] :is(.finder-search input, .spotlight-input input) {
+	color: var(--dark-text);
+}
+html[data-theme="dark"]
+	:is(
+		.finder-search input,
+		.spotlight-input input,
+		.contact-form input,
+		.contact-form textarea
+	)::placeholder {
+	color: #9ea7b0;
+}
+html[data-theme="dark"]
+	:is(
+		.finder-search-row > span,
+		.file-section-heading,
+		.file-section-heading > span:first-child,
+		.file-kind,
+		.file-date,
+		.file-list-heading,
+		.finder-status,
+		.menu-hint
+	) {
+	color: var(--dark-muted);
+}
+html[data-theme="dark"]
+	:is(.finder-welcome .eyebrow, .contact-content .eyebrow, .welcome-sticker) {
+	color: #b4bfc9;
+}
+html[data-theme="dark"]
+	:is(
+		.finder-welcome h1,
+		.contact-content h1,
+		.markdown-document h1,
+		.markdown-document h2,
+		.markdown-document h3,
+		.finder-sheet h2,
+		.empty-folder h2
+	) {
+	color: var(--dark-heading);
+}
+html[data-theme="dark"]
+	:is(
+		.finder-welcome p,
+		.contact-content > p,
+		.finder-sheet > p,
+		.contact-form label,
+		.file-name,
+		.markdown-document
+	) {
+	color: var(--dark-text);
+}
+html[data-theme="dark"]
+	:is(
+		.finder-welcome h1 > span,
+		.contact-content h1 > span,
+		.markdown-document a,
+		.breadcrumbs button:hover
+	) {
+	color: var(--dark-accent);
+}
+html[data-theme="dark"] .file-item:hover {
+	background: #ffffff08;
+}
+html[data-theme="dark"] .files-list .file-item:nth-child(odd) {
+	background: #ffffff04;
+}
+html[data-theme="dark"] .files-list .file-item:hover {
+	background: #ffffff0a;
+}
+html[data-theme="dark"] .file-item.selected,
+html[data-theme="dark"] .files-list .file-item.selected {
+	background: var(--dark-selection);
+	border-color: #788795;
+}
+html[data-theme="dark"] .finder-status {
+	background: #202326;
+}
+html[data-theme="dark"] .empty-folder {
+	color: var(--dark-muted);
+}
+html[data-theme="dark"] .document-icon {
+	background: linear-gradient(125deg, #4b5259, #353b41);
+	border-color: #68737e;
+	box-shadow: 0 2px 3px #0002;
+}
+html[data-theme="dark"] .document-icon::after {
+	background: #75818c;
+}
+html[data-theme="dark"]
+	:is(.document-icon > svg, .document-icon > span, .about-icon > svg) {
+	color: #d7e0e8;
+}
+
+html[data-theme="dark"] :is(.popover, .spotlight, dialog.finder-sheet) {
+	background: #2e3236f7;
+	color: var(--dark-text);
+	border-color: #ffffff25;
+	box-shadow:
+		0 12px 35px #0007,
+		0 0 0 1px #0003;
+}
+html[data-theme="dark"] :is(.popover button:hover, .context-menu button:focus) {
+	background: #515e6b;
+	color: #fff;
+}
+html[data-theme="dark"] .popover hr {
+	border-color: var(--dark-border);
+}
+html[data-theme="dark"] .context-menu-divider::before {
+	background: var(--dark-border);
+}
+html[data-theme="dark"]
+	:is(
+		.appearance-popover p,
+		.appearance-popover > span,
+		.appearance-popover .appearance-status,
+		.spotlight-label,
+		.spotlight footer,
+		.spotlight-empty,
+		.spotlight-input,
+		.document-toolbar,
+		.markdown-document em
+	) {
+	color: var(--dark-muted);
+}
+html[data-theme="dark"] .appearance-control {
+	border-color: var(--dark-border);
+}
+html[data-theme="dark"]
+	:is(.appearance-control legend, .appearance-popover .wallpaper-label) {
+	color: var(--dark-text);
+}
+html[data-theme="dark"] .appearance-option {
+	background: #ffffff04;
+	border-color: #ffffff1e;
+	color: var(--dark-muted);
+}
+html[data-theme="dark"] .appearance-option:hover {
+	background: #ffffff09;
+}
+html[data-theme="dark"] .appearance-option.selected {
+	background: var(--dark-selection);
+	border-color: #93a2b1;
+	color: #e2e8ee;
+	box-shadow: 0 0 0 1px #93a2b126;
+}
+html[data-theme="dark"] .appearance-option:has(input:focus-visible) {
+	outline-color: #a7b8c9;
+}
+html[data-theme="dark"] .wallpaper-options .wallpaper-swatch {
+	border-color: #ffffff38;
+}
+html[data-theme="dark"] .wallpaper-swatch[aria-pressed="true"] {
+	outline-color: #a7b8c9;
+}
+html[data-theme="dark"] .swatch-dawn {
+	background: linear-gradient(135deg, #646464, #494949);
+}
+html[data-theme="dark"] .swatch-dusk {
+	background: linear-gradient(135deg, #505050, #3a3a3a);
+}
+html[data-theme="dark"] .swatch-midnight {
+	background: linear-gradient(135deg, #3c3c3c, #2c2c2c);
+}
+html[data-theme="dark"] .spotlight-result {
+	color: var(--dark-text);
+}
+html[data-theme="dark"]
+	:is(.spotlight-result.selected, .spotlight-result:hover) {
+	background: var(--dark-selection);
+}
+html[data-theme="dark"]
+	:is(
+		.finder-sheet input,
+		.finder-sheet select,
+		.contact-form input,
+		.contact-form textarea,
+		.note-editor
+	) {
+	background: #1c1f22;
+	border-color: #ffffff26;
+	color: #dce2e8;
+}
+html[data-theme="dark"] dialog::backdrop {
+	background: #080a0c80;
+}
+html[data-theme="dark"] .primary-button {
+	background: #596673;
+	color: #fff;
+	box-shadow:
+		inset 0 1px #fff2,
+		0 2px 3px #0002;
+}
+html[data-theme="dark"] .primary-button:hover:not(:disabled) {
+	background: #687582;
+}
+html[data-theme="dark"] .secondary-button {
+	background: #41484f;
+	color: #dfe6ec;
+}
+html[data-theme="dark"] .secondary-button:hover {
+	background: #505a64;
+}
+html[data-theme="dark"] .text-button {
+	color: var(--dark-accent);
+}
+html[data-theme="dark"] .text-button:hover {
+	background: var(--dark-selection);
+}
+html[data-theme="dark"] .inline-error {
+	color: #ffc2ad;
+	background: #4b2c2d;
+}
+html[data-theme="dark"] .markdown-document strong {
+	color: #dde4eb;
+}
+html[data-theme="dark"] :is(.markdown-document code, .markdown-document pre) {
+	background: #2c3238;
+	color: #d8e2eb;
+}
+html[data-theme="dark"] .markdown-document blockquote {
+	border-color: #8696a5;
+}
+html[data-theme="dark"]
+	:is(.markdown-document hr, .markdown-document td, .markdown-document th) {
+	border-color: #ffffff20;
+}
+html[data-theme="dark"] :is(.contact-symbol, .contact-success) {
+	background: #353e46;
+	color: #d4dfe8;
+}
+html[data-theme="dark"] .dock {
+	background: #1e2328b8;
+	border-color: #ffffff24;
+	box-shadow:
+		0 10px 35px #0005,
+		inset 0 0 0 1px #ffffff06;
+}
+html[data-theme="dark"] .dock-indicator.running {
+	background: #e0e6ec;
+}
+html[data-theme="dark"] .dock-icon {
+	box-shadow:
+		0 3px 5px #0004,
+		inset 0 1px 1px #fff6;
+}
+html[data-theme="dark"] .dock-preview .dock-icon {
+	background: linear-gradient(#8895a1, #586572);
+}
+html[data-theme="dark"] .dock-trash .dock-icon {
+	box-shadow: none;
+	color: #e0e6ec;
+	filter: drop-shadow(0 3px 2px #0005);
+}
+html[data-theme="dark"] .dock-trash .dock-icon svg {
+	fill: #b8c4cf6b;
+}
+html[data-theme="dark"] .dock-divider {
+	background: #e0e6ec32;
+}
+html[data-theme="dark"] .dock-tooltip {
+	background: #30373eea;
+	border-color: #ffffff24;
+	color: #e2e9f0;
+	box-shadow: 0 4px 12px #0004;
+}
+html[data-theme="dark"] :focus-visible {
+	outline-color: #a7b8c9;
+}
+html[data-theme="dark"]
+	:is(
+		.finder-scroll,
+		.markdown-document,
+		.contact-content,
+		.note-editor,
+		.spotlight
+	) {
+	scrollbar-color: #697680 #22272b;
+}
